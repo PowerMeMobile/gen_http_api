@@ -6,10 +6,10 @@
   {applications, [
 					kernel,
 					stdlib,
+					lager,
 					cowboy,
 					jsx,
 					uuid
                  ]},
-  {mod, {gen_http_api_app, []}},
   {env, []}
  ]}.
