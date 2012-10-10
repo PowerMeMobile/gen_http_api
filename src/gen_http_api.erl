@@ -188,6 +188,8 @@ process_req(State = #state{req = Req, handler_params = Params, view = V, handler
 
 convert(undefined, _Type) ->
 	undefined;
+convert(Value, {custom, Fun}) ->
+	Fun(Value);
 convert(State, customer_state) ->
 	case State of
 		<<"0">> -> 0;
@@ -200,6 +202,8 @@ convert(Value, addr) ->
 	decode_address(Value);
 convert(_Value, disabled) ->
 	erlang:error(disabled);
+convert(Value, atom) ->
+	list_to_atom(binary_to_list(Value));
 convert(Any, boolean) ->
 	convert_boolean(Any);
 convert(UUID, binary_uuid) ->
