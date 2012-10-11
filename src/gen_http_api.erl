@@ -203,7 +203,7 @@ convert(Value, addr) ->
 convert(_Value, disabled) ->
 	erlang:error(disabled);
 convert(Value, atom) ->
-	list_to_atom(binary_to_list(Value));
+	list_to_existing_atom(binary_to_list(Value));
 convert(Any, boolean) ->
 	convert_boolean(Any);
 convert(UUID, binary_uuid) ->
