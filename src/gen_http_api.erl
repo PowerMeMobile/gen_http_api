@@ -9,6 +9,7 @@
 -include("logging.hrl").
 -include("crud.hrl").
 
+%% deprecated, do not use.
 -record(addr, {
 	addr :: string(),
 	ton :: integer(),
@@ -186,20 +187,24 @@ process_req(State = #state{req = Req, handler_params = Params, view = V, handler
 			http_code(500, Req, State)
 	end.
 
-convert(undefined, _Type) ->
-	undefined;
-convert(Value, {custom, Fun}) ->
-	Fun(Value);
+%% deprecated, use {custom, Fun} instead.
 convert(State, customer_state) ->
 	case State of
 		<<"0">> -> 0;
 		<<"1">> -> 1
 	end;
+%% deprecated, use {custom, Fun} instead.
 convert(SMPPType, smpp_type) ->
 	convert_smpp_type(SMPPType);
+%% deprecated, use {custom, Fun} instead.
 convert(Value, addr) ->
 	?log_debug("Addr: ~p", [Value]),
 	decode_address(Value);
+
+convert(undefined, _Type) ->
+	undefined;
+convert(Value, {custom, Fun}) ->
+	Fun(Value);
 convert(_Value, disabled) ->
 	erlang:error(disabled);
 convert(Value, atom) ->
@@ -235,7 +240,7 @@ validate_uuid(UUID) ->
 			erlang:error(bad_uuid)
 	end.
 
-%% convert "addr,ton,npi" to #addr{addr, ton, npi}
+%% deprecated, do not use.
 decode_address(AddrBin) ->
 	AddrString = binary_to_list(AddrBin),
 	[Addr, Ton, Npi] = string:tokens(AddrString, ","),
@@ -245,6 +250,7 @@ decode_address(AddrBin) ->
 		npi = list_to_integer(Npi)
 	}.
 
+%% deprecated, do not use.
 convert_smpp_type(Type) ->
 	case Type of
 		<<"transmitter">> -> transmitter;
