@@ -142,7 +142,7 @@ get_parameter(Spec = #param{name = Name, repeated = false}, ReqParamsPL) ->
 validate_repeated([], [], Spec = #param{mandatory = true}) ->
 	{error, missing, atom_to_binary(Spec#param.name, utf8)};
 validate_repeated([], Acc, Spec) ->
-	{ok, {Spec#param.name, Acc}};
+	{ok, {Spec#param.name, lists:reverse(Acc)}};
 validate_repeated([RawValue | Tail], Acc, Spec) ->
 	case validate(RawValue, Spec) of
 		{ok, {_Key, Value}} ->
