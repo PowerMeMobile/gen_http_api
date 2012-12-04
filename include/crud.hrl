@@ -39,20 +39,13 @@
 -define(gv(Key, List),
 	proplists:get_value(Key, List)).
 
--define(resolve(Key, List, ActualValue),
-	fun(Key, List, ActualValue) ->
-		TmpValue = ?gv(Key, List),
-		case TmpValue of
-			undefined -> ActualValue;
-			_ -> TmpValue
+-define(resolve(Key, List, DefaultValue),
+	apply(fun(K, L, DV) ->
+		TmpV = ?gv(K, L),
+		case TmpV of
+			undefined -> DV;
+			_ -> TmpV
 		end
-	end).
-
-resolve(Key, List, DefaultValue) ->
-	TmpValue = ?gv(Key, List),
-	case TmpValue of
-		undefined -> DefaultValue;
-		_ -> TmpValue
-	end.
+	end, [Key, List, DefaultValue])).
 
 -endif.
