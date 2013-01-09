@@ -278,9 +278,8 @@ http_code(401, ExtBody, Req, State) ->
 http_code(404, ExtBody, Req, State) ->
 	Body = resolve_body(ExtBody, <<"Not found: mistake in the host or path of the service URI">>),
 	http_reply(404, [], Body, Req, State);
-http_code(204, ExtBody, Req, State) ->
-	Body = resolve_body(ExtBody, <<"No content">>),
-	http_reply(204, [], Body, Req, State);
+http_code(204, _ExtBody, Req, State) ->
+	http_reply(204, [], <<>>, Req, State);
 http_code(201, ExtBody, Req, State) ->
 	Body = resolve_body(ExtBody, <<"Created">>),
 	http_reply(201, [], Body, Req, State);
