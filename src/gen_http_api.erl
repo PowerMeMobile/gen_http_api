@@ -296,7 +296,6 @@ resolve_body(undefined, DefaultBody) ->
 resolve_body(ExternalBody, _DefaultBody) ->
 	ExternalBody.
 
-
 %% ===================================================================
 %% Exceptions
 %% ===================================================================
@@ -374,13 +373,15 @@ exception_body_and_code(Exception, _Variables) ->
 
 
 exception_body(MessageID, Text, Variables) ->
-	Body = [{<<"request_error">>, [{<<"service_exception">>, [
-													{<<"message_id">>, MessageID},
-													{<<"text">>, Text},
-													{<<"variables">>, Variables}
-													]
-											}]
-						}],
+	Body = [
+		{<<"request_error">>, [
+			{<<"service_exception">>, [
+				{<<"message_id">>, MessageID},
+				{<<"text">>, Text},
+				{<<"variables">>, Variables}
+			]}
+		]}
+	],
 	{ok, Json} = gen_http_api_converter:process(Body, <<"json">>),
 	?log_debug("Exception json body: ~p", [Body]),
 	{ok, Json}.

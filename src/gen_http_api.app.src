@@ -1,15 +1,14 @@
-{application, gen_http_api,
- [
-  {description, ""},
-  {vsn, "1"},
-  {registered, []},
-  {applications, [
-					kernel,
-					stdlib,
-					lager,
-					cowboy,
-					jsx,
-					uuid
-                 ]},
-  {env, []}
- ]}.
+{application, gen_http_api, [
+	{description, ""},
+	{vsn, "1"},
+	{registered, []},
+	{applications, [
+		kernel,
+		stdlib,
+		lager,
+		cowboy,
+		jsx,
+		uuid
+	]},
+	{env, []}
+]}.
