@@ -211,13 +211,8 @@ convert(Value, atom) ->
 	list_to_existing_atom(binary_to_list(Value));
 convert(Any, boolean) ->
 	convert_boolean(Any);
-convert(UUID, binary_uuid) ->
-	UUIDstr = binary_to_list(UUID),
-	UUIDbin = uuid:to_binary(UUIDstr),
-	validate_uuid(UUIDbin);
-convert(UUID, string_uuid) ->
-	UUIDstr = binary_to_list(UUID),
-	validate_uuid(UUIDstr);
+convert(UUID, uuid) ->
+	validate_uuid(UUID);
 convert(Value, binary) ->
 	Value;
 convert(Value, string) ->
@@ -233,11 +228,11 @@ convert_boolean(Any) ->
 	erlang:error({not_boolean, Any}).
 
 validate_uuid(UUID) ->
-	case uuid:is_valid(UUID) of
-		true ->
-			UUID;
-		false ->
-			erlang:error(bad_uuid)
+	try uuid:parse(UUID) of
+		_ -> UUID
+	catch
+		error:badarg ->
+			erlang:error({bad_uuid, UUID})
 	end.
 
 %% deprecated, do not use.
