@@ -378,7 +378,7 @@ exception_body(MessageID, Text, Variables) ->
 		]}
 	],
 	{ok, Json} = gen_http_api_converter:process(Body, <<"json">>),
-	?log_debug("Exception json body: ~p", [Body]),
+	?log_warn("Exception json body: ~p", [Body]),
 	{ok, Json}.
 
 get_requests_parameters(Method, Req) ->
