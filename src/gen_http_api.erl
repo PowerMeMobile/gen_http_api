@@ -28,6 +28,8 @@
 	handler_func :: create | read | update | delete | index
 }).
 
+-spec behaviour_info(callbacks) ->
+	[{atom(), non_neg_integer()}].
 behaviour_info(callbacks) ->
 	[
 		{init, 0},
@@ -41,12 +43,16 @@ behaviour_info(callbacks) ->
 %% Cowboy Callback Functions
 %% ===================================================================
 
+-spec init({tcp, http}, term(), [module()]) ->
+	{ok, term(), #state{}}.
 init({tcp, http}, Req, [Handler]) ->
 	?log_debug("Req: ~p", [Req]),
 	?log_debug("Handler: ~p", [Handler]),
 	{View, _} = cowboy_http_req:qs_val(<<"view">>, Req),
 	{ok, Req, #state{view = View, handler = Handler}}.
 
+-spec handle(term(), #state{}) ->
+	{ok, term(), #state{}}.
 handle(Req, State = #state{handler = Handler}) ->
 	{ok, HandlerSpec} = Handler:init(),
 	{Path, _} = cowboy_http_req:path(Req),
@@ -60,6 +66,7 @@ handle(Req, State = #state{handler = Handler}) ->
 		req_params = ReqParameters},
 	get_method_spec(Method, HandlerSpec, NewState).
 
+-spec terminate(term(), #state{}) -> ok.
 terminate(_Req, #state{}) ->
 	ok.
 
