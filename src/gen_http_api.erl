@@ -2,9 +2,11 @@
 
 -behaviour(cowboy_http_handler).
 
--export([init/3, handle/2, terminate/2]).
+-export([init/3, handle/2, terminate/3]).
 
 -export([behaviour_info/1]).
+
+-ignore_xref([{behaviour_info, 1}]).
 
 -include("logging.hrl").
 -include("crud.hrl").
@@ -17,8 +19,8 @@
 }).
 
 -record(state, {
-	handler :: atom(),
-	req :: term(),
+	handler :: module(),
+	req :: cowboy_req:req(),
 	handler_spec :: #specs{},
 	method_spec :: #method_spec{},
 	path :: list(),
@@ -43,44 +45,49 @@ behaviour_info(callbacks) ->
 %% Cowboy Callback Functions
 %% ===================================================================
 
--spec init({tcp, http}, term(), [module()]) ->
-	{ok, term(), #state{}}.
+-spec init({tcp, http}, cowboy_req:req(), [module()]) ->
+	{ok, cowboy_req:req(), #state{}}.
 init({tcp, http}, Req, [Handler]) ->
 	?log_debug("Req: ~p", [Req]),
 	?log_debug("Handler: ~p", [Handler]),
-	{View, _} = cowboy_http_req:qs_val(<<"view">>, Req),
+	{View, _} = cowboy_req:qs_val(<<"view">>, Req),
 	{ok, Req, #state{view = View, handler = Handler}}.
 
--spec handle(term(), #state{}) ->
-	{ok, term(), #state{}}.
-handle(Req, State = #state{handler = Handler}) ->
+-spec handle(cowboy_req:req(), #state{}) ->
+	{ok, cowboy_req:req(), #state{}}.
+handle(Req0, State = #state{handler = Handler}) ->
 	{ok, HandlerSpec} = Handler:init(),
-	{Path, _} = cowboy_http_req:path(Req),
-	{Method, _} = cowboy_http_req:method(Req),
-	ReqParameters = get_requests_parameters(Method, Req),
+	{RawPath, _} = cowboy_req:path(Req0),
+	Path =
+	case binary:split(RawPath, <<"/">>, [trim, global]) of
+		[<<>> | Tail] -> Tail;
+		List -> List
+	end,
+	{Method, _} = cowboy_req:method(Req0),
+	{ReqParameters, Req1} = get_requests_parameters(Method, Req0),
 	?log_debug("ReqParameters: ~p", [ReqParameters]),
 	NewState = State#state{
-		req = Req,
+		req = Req1,
 		handler_spec = HandlerSpec,
 		path = Path,
 		req_params = ReqParameters},
 	get_method_spec(Method, HandlerSpec, NewState).
 
--spec terminate(term(), #state{}) -> ok.
-terminate(_Req, #state{}) ->
+-spec terminate(any(), cowboy_req:req(), #state{}) -> ok.
+terminate(_Reason, _Req, #state{}) ->
 	ok.
 
 %% ===================================================================
 %% Local Functions
 %% ===================================================================
 
-get_method_spec('GET', #specs{read = Spec}, State) when Spec =/= undefined ->
+get_method_spec(<<"GET">>, #specs{read = Spec}, State) when Spec =/= undefined ->
 	process_path(State#state{method_spec = Spec, handler_func = read});
-get_method_spec('POST', #specs{create = Spec}, State) when Spec =/= undefined ->
+get_method_spec(<<"POST">>, #specs{create = Spec}, State) when Spec =/= undefined ->
 	process_path(State#state{method_spec = Spec, handler_func = create});
-get_method_spec('PUT', #specs{update = Spec}, State) when Spec =/= undefined ->
+get_method_spec(<<"PUT">>, #specs{update = Spec}, State) when Spec =/= undefined ->
 	process_path(State#state{method_spec = Spec, handler_func = update});
-get_method_spec('DELETE', #specs{delete = Spec}, State) when Spec =/= undefined ->
+get_method_spec(<<"DELETE">>, #specs{delete = Spec}, State) when Spec =/= undefined ->
 	process_path(State#state{method_spec = Spec, handler_func = delete});
 get_method_spec(Method, _, State = #state{req = Req}) ->
 	?log_warn("[~p] method not supported", [Method]),
@@ -275,7 +282,7 @@ http_code(400, ExtBody, Req, State) ->
 	http_reply(400, [], Body, Req, State);
 http_code(401, ExtBody, Req, State) ->
 	Body = resolve_body(ExtBody, <<"Authentication failure, check your authentication details">>),
-	Headers = [{'Www-Authenticate', <<"Basic">>}],
+	Headers = [{<<"Www-Authenticate">>, <<"Basic">>}],
 	http_reply(401, Headers, Body, Req, State);
 http_code(404, ExtBody, Req, State) ->
 	Body = resolve_body(ExtBody, <<"Not found: mistake in the host or path of the service URI">>),
@@ -290,7 +297,7 @@ http_code(200, ExtBody, Req, State) ->
 	http_reply(200, [], Body, Req, State).
 
 http_reply(Code, Headers, Body, Req, State) ->
-	{ok, Req2} = cowboy_http_req:reply(Code, Headers, Body, Req),
+	{ok, Req2} = cowboy_req:reply(Code, Headers, Body, Req),
 	{ok, Req2, State}.
 
 resolve_body(undefined, DefaultBody) ->
@@ -308,7 +315,7 @@ exception(Code, Variables, Req, State) ->
 	?log_debug("Code: ~p, Variables: ~p", [Code, Variables]),
 	{ok, Body, HttpCode} = exception_body_and_code(Code, Variables),
 	ContentType = <<"application/json">>,
-	Headers = [{'Content-Type', ContentType}],
+	Headers = [{<<"Content-Type">>, ContentType}],
 	http_reply(HttpCode, Headers, Body, Req, State).
 
 %% Service exceptions
@@ -388,17 +395,15 @@ exception_body(MessageID, Text, Variables) ->
 	?log_warn("Exception json body: ~p", [Body]),
 	{ok, Json}.
 
-get_requests_parameters(Method, Req) ->
-	Parameters =
+get_requests_parameters(Method, Req0) ->
 	case Method of
-		Method when Method == 'POST'
+		Method when Method == <<"POST">>
 					orelse
-					Method == 'PUT' ->
-			{BodyQs, _} = cowboy_http_req:body_qs(Req),
-			{QsVals, _} = cowboy_http_req:qs_vals(Req),
-			BodyQs ++ QsVals;
+					Method == <<"PUT">> ->
+			{ok, Body, Req1} = cowboy_req:body(800000, Req0),
+			BodyQs = cowboy_http:x_www_form_urlencoded(Body),
+			{QsVals, _} = cowboy_req:qs_vals(Req1),
+			{BodyQs ++ QsVals, Req1};
 		_Any ->
-			{QsVals, _} = cowboy_http_req:qs_vals(Req),
-			QsVals
-	end,
-	Parameters.
+			cowboy_req:qs_vals(Req0)
+	end.
