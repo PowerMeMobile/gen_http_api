@@ -4,8 +4,6 @@
 
 -export([init/3, handle/2, terminate/3]).
 
--export([behaviour_info/1]).
-
 -ignore_xref([{behaviour_info, 1}]).
 
 -include("logging.hrl").
@@ -19,27 +17,30 @@
 }).
 
 -record(state, {
-	handler :: module(),
-	req :: cowboy_req:req(),
-	handler_spec :: #specs{},
-	method_spec :: #method_spec{},
-	path :: list(),
-	req_params :: [] | [{binary(), binary()}],
-	handler_params :: [] | [{atom(), term()}],
-	view :: term(),
-	handler_func :: create | read | update | delete | index
+	handler 		:: module(),
+	req 			:: cowboy_req:req(),
+	handler_spec 	:: #specs{},
+	method_spec 	:: #method_spec{},
+	path 			:: list(),
+	req_params 		:: [{binary(), binary()}],
+	handler_params 	:: [{atom(), term()}],
+	view 			:: term(),
+	handler_func 	:: create | read | update | delete | index
 }).
 
--spec behaviour_info(callbacks) ->
-	[{atom(), non_neg_integer()}].
-behaviour_info(callbacks) ->
-	[
-		{init, 0},
-		{create, 1},
-		{read, 1},
-		{update, 1},
-		{delete, 1}
-	].
+%% ===================================================================
+%% Callbacks
+%% ===================================================================
+
+-callback init() -> {ok, #specs{}}.
+
+-callback create(params()) -> response().
+
+-callback read(params()) -> response().
+
+-callback udpate(params()) -> response().
+
+-callback delete(params()) -> response().
 
 %% ===================================================================
 %% Cowboy Callback Functions

@@ -4,9 +4,13 @@
 -include("crud.hrl").
 
 -spec init() -> {ok, #specs{}}.
--spec create([{atom(), term()}]) -> {ok, response()} | {error, reason()}.
--spec read([{atom(), term()}]) -> {ok, response()} | {error, reason()}.
--spec update([{atom(), term()}]) -> {ok, response()} | {error, reason()}.
--spec delete([{atom(), term()}]) -> {ok, response()} | {error, reason()}.
+
+-spec create(params()) -> response().
+
+-spec read(params()) -> response().
+
+-spec update(params()) -> response().
+
+-spec delete(params()) -> response().
 
 -endif.

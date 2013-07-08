@@ -1,51 +1,32 @@
 -ifndef(crud_hrl).
 -define(crud_hrl, included).
 
--type req() :: term().
--type rest_params() :: tuple().
--type reason() :: term().
--type response() :: term().
--type http_method() :: 'GET' | 'POST' | 'PUT' | 'DELETE'.
--type path() :: [binary()].
--type state() :: term().
+-type params() :: [{atom(), term()}].
+
+-type response() ::
+	{ok, term()} |
+	{http_code, pos_integer(), term()} |
+	{exception, atom()} |
+	{exception, atom(), [term()]} |
+	{error, term()}.
 
 -record(param, {
-	name	 :: atom(),
-	mandatory = false :: boolean(),
-	repeated = false :: boolean(),
-	type	 :: atom()
+	name	 			:: atom(),
+	mandatory = false 	:: boolean(),
+	repeated = false 	:: boolean(),
+	type				:: atom()
 }).
 
 -record(method_spec, {
-	path :: list(),
-	params :: [#param{}]
+	path 	:: [binary() | atom()],
+	params 	:: [#param{}]
 }).
 
 -record(specs, {
-	create :: #method_spec{},
-	read :: #method_spec{},
-	update :: #method_spec{},
-	delete :: #method_spec{}
+	create 	:: #method_spec{} | undefined,
+	read 	:: #method_spec{} | undefined,
+	update 	:: #method_spec{} | undefined,
+	delete 	:: #method_spec{} | undefined
 }).
-
--define(record_to_proplist(Record),
-	fun(Val) ->
-		Fields = record_info(fields, Record),
-		[_Name| Values] = tuple_to_list(Val),
-		lists:zip(Fields, Values)
-	end
-).
-
--define(gv(Key, List),
-	proplists:get_value(Key, List)).
-
--define(resolve(Key, List, DefaultValue),
-	apply(fun(K, L, DV) ->
-		TmpV = ?gv(K, L),
-		case TmpV of
-			undefined -> DV;
-			_ -> TmpV
-		end
-	end, [Key, List, DefaultValue])).
 
 -endif.
