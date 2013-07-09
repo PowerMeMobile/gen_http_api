@@ -38,7 +38,7 @@
 
 -callback read(params()) -> response().
 
--callback udpate(params()) -> response().
+-callback update(params()) -> response().
 
 -callback delete(params()) -> response().
 
