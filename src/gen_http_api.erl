@@ -2,9 +2,8 @@
 
 -behaviour(cowboy_http_handler).
 
+-export([compile_routes/1]).
 -export([init/3, handle/2, terminate/3]).
-
--ignore_xref([{behaviour_info, 1}]).
 
 -include("logging.hrl").
 -include("crud.hrl").
@@ -20,12 +19,11 @@
 	handler 		:: module(),
 	req 			:: cowboy_req:req(),
 	handler_spec 	:: #specs{},
-	method_spec 	:: #method_spec{},
-	path 			:: list(),
+	method_params 	:: [#param{}] | undefined,
 	req_params 		:: [{binary(), binary()}],
 	handler_params 	:: [{atom(), term()}],
 	view 			:: term(),
-	handler_func 	:: create | read | update | delete | index
+	handler_func 	:: create | read | update | delete
 }).
 
 %% ===================================================================
@@ -43,6 +41,22 @@
 -callback delete(params()) -> response().
 
 %% ===================================================================
+%% API
+%% ===================================================================
+
+-spec compile_routes(Handlers :: [module()]) ->
+	[{Path :: list(), ?MODULE, [Handler :: module()]}].
+compile_routes(Handlers) ->
+	compile_routes(Handlers, []).
+compile_routes([], Acc) ->
+	Routes = lists:reverse(Acc),
+	io:format("gen_http_api dispatch rules: ~n~p~n", [Routes]),
+	Routes;
+compile_routes([Handler | Rest], Acc) ->
+	{ok, Specs} = Handler:init(),
+	compile_routes(Rest, [{Specs#specs.route, ?MODULE, [Handler]} | Acc]).
+
+%% ===================================================================
 %% Cowboy Callback Functions
 %% ===================================================================
 
@@ -56,21 +70,14 @@ init({tcp, http}, Req, [Handler]) ->
 
 -spec handle(cowboy_req:req(), #state{}) ->
 	{ok, cowboy_req:req(), #state{}}.
-handle(Req0, State = #state{handler = Handler}) ->
+handle(Req1, State = #state{handler = Handler}) ->
 	{ok, HandlerSpec} = Handler:init(),
-	{RawPath, _} = cowboy_req:path(Req0),
-	Path =
-	case binary:split(RawPath, <<"/">>, [trim, global]) of
-		[<<>> | Tail] -> Tail;
-		List -> List
-	end,
-	{Method, _} = cowboy_req:method(Req0),
-	{ReqParameters, Req1} = get_requests_parameters(Method, Req0),
+	{Method, Req2} = cowboy_req:method(Req1),
+	{ReqParameters, Req3} = get_requests_parameters(Method, Req2),
 	?log_debug("ReqParameters: ~p", [ReqParameters]),
 	NewState = State#state{
-		req = Req1,
+		req = Req3,
 		handler_spec = HandlerSpec,
-		path = Path,
 		req_params = ReqParameters},
 	get_method_spec(Method, HandlerSpec, NewState).
 
@@ -82,47 +89,31 @@ terminate(_Reason, _Req, #state{}) ->
 %% Local Functions
 %% ===================================================================
 
-get_method_spec(<<"GET">>, #specs{read = Spec}, State) when Spec =/= undefined ->
-	process_path(State#state{method_spec = Spec, handler_func = read});
-get_method_spec(<<"POST">>, #specs{create = Spec}, State) when Spec =/= undefined ->
-	process_path(State#state{method_spec = Spec, handler_func = create});
-get_method_spec(<<"PUT">>, #specs{update = Spec}, State) when Spec =/= undefined ->
-	process_path(State#state{method_spec = Spec, handler_func = update});
-get_method_spec(<<"DELETE">>, #specs{delete = Spec}, State) when Spec =/= undefined ->
-	process_path(State#state{method_spec = Spec, handler_func = delete});
+get_method_spec(<<"GET">>, #specs{read = Params}, State) when Params =/= undefined ->
+	process_path(State#state{method_params = Params, handler_func = read});
+get_method_spec(<<"POST">>, #specs{create = Params}, State) when Params =/= undefined ->
+	process_path(State#state{method_params = Params, handler_func = create});
+get_method_spec(<<"PUT">>, #specs{update = Params}, State) when Params =/= undefined ->
+	process_path(State#state{method_params = Params, handler_func = update});
+get_method_spec(<<"DELETE">>, #specs{delete = Params}, State) when Params =/= undefined ->
+	process_path(State#state{method_params = Params, handler_func = delete});
 get_method_spec(Method, _, State = #state{req = Req}) ->
-	?log_warn("[~p] method not supported", [Method]),
+	?log_debug("[~p] method not supported", [Method]),
 	exception('svc0006', [Method], Req, State).
 
-process_path(State = #state{path = ReqPath, method_spec = SpecList}) when is_list(SpecList) ->
-	?log_debug("ReqPath: ~p", [ReqPath]),
-	?log_debug("Method spec: ~p", [SpecList]),
-	[Spec] = lists:filter(fun(#method_spec{path = Path}) ->
-		length(ReqPath) == length(Path)
-	end, SpecList),
-	#method_spec{path = MethodPath} = Spec,
-	process_path(ReqPath, MethodPath, [], State#state{method_spec = Spec});
-process_path(State = #state{path = ReqPath, method_spec = Spec}) ->
-	#method_spec{path = MethodPath} = Spec,
-	process_path(ReqPath, MethodPath, [], State).
-
-process_path([], [], Acc, State = #state{req_params = Params}) ->
-	?log_debug("Req params with path: ~p", [Acc ++ Params]),
-	process_method_params(State#state{req_params = Acc ++ Params});
-process_path([Value | TailReqPath], [Name | TailMethodPath], Acc, State)
-		when is_atom(Name) ->
-	NewAcc = [{atom_to_binary(Name, utf8), Value}] ++ Acc,
-	process_path(TailReqPath, TailMethodPath, NewAcc, State);
-process_path([Elem | TailReqPath], [Elem | TailMethodPath], Acc, State) ->
-	process_path(TailReqPath, TailMethodPath, Acc, State);
-process_path(_, _, _, State = #state{req = Req}) ->
-	?log_warn("Error in path", []),
-	exception('svc0007', [], Req, State).
+process_path(State = #state{req = Req0}) ->
+	{AtomBindings, Req1} = cowboy_req:bindings(Req0),
+	Bindings = lists:map(fun({AtomName, Value}) ->
+			{atom_to_binary(AtomName, utf8), Value}
+		end, AtomBindings),
+	#state{req_params = Params} = State,
+	NewReqParams = lists:flatten([Bindings, Params]),
+	?log_debug("Params with bindings: ~p", [NewReqParams]),
+	process_method_params(State#state{req = Req1, req_params = NewReqParams}).
 
 
-process_method_params(State = #state{method_spec = Spec, req_params = ReqParamsPL}) ->
-	#method_spec{params = ParamsSpec} = Spec,
-	process_method_params(ParamsSpec, ReqParamsPL, [], State).
+process_method_params(State = #state{method_params = Params, req_params = ReqParamsPL}) ->
+	process_method_params(Params, ReqParamsPL, [], State).
 
 process_method_params([], _, Acc, State = #state{}) ->
 	?log_debug("Processed parameters: ~p", [Acc]),

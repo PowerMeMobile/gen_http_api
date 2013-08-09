@@ -17,16 +17,12 @@
 	type				:: atom()
 }).
 
--record(method_spec, {
-	path 	:: [binary() | atom()],
-	params 	:: [#param{}]
-}).
-
 -record(specs, {
-	create 	:: #method_spec{} | undefined,
-	read 	:: #method_spec{} | undefined,
-	update 	:: #method_spec{} | undefined,
-	delete 	:: #method_spec{} | undefined
+	create 	:: [#param{}] | undefined,
+	read 	:: [#param{}] | undefined,
+	update 	:: [#param{}] | undefined,
+	delete 	:: [#param{}] | undefined,
+	route	:: list()
 }).
 
 -endif.
