@@ -1,13 +1,12 @@
 Gen HTTP API
 ===========
 
-gen_http_api is a erlang behaviour (cowboy based) that able to help
-quckly write simple REST (CRUD) handlers.
+gen_http_api is an Erlang behaviour (cowboy based) that allows to quckly write simple REST (CRUD) handlers.
 
 Using
 -----
 
-Add dependency in your rebar.config:
+Add dependency into your rebar.config:
 
 ``` erlang
 {deps, [
@@ -29,26 +28,26 @@ Write simple handler:
 	delete/1
 ]).
 
--include_lib("gen_http_api/include/crud_specs.hrl")
+-include_lib("gen_http_api/include/crud_specs.hrl").
 
 init() ->
     {ok, #specs{
-        %% create method has no any parameters
+        %% create method has not any parameters
         create = [],
 
         %% read method has 'id' mandatory parameter
         read = [#param{name = id, mandatory = false, repeated = false, type = binary}],
 
-        %% update method not supported
+        %% update method is not supported
         %% behaviour respond with svc0006
         update = undefined,
 
-        %% delete method not supported
+        %% delete method is not supported
         delete = undefined,
 
         %% rout to resource
         route = "/customers/[:id]"
-	}}.
+    }}.
 
 %% Params variable is a proplist. For example: [{id, <<"CustomerID">>}]
 create(Params) ->
@@ -84,8 +83,7 @@ And then start cowboy listener (read cowboy docs).
 
 Response content type
 ---------------------
-Instead of binary body, you can use erlang proplist that will be converted to
-JSON.
+Instead of binary body, you can use an Erlang proplist that will be converted to JSON.
 For example:
 ``` erlang
 read(_Params) ->
@@ -95,7 +93,7 @@ read(_Params) ->
 Supported type validations
 --------------------------
 By mandatory/optional:
-- mandatory: if not presented in request, behaviour respond svc0001 exception
+- mandatory: if not presented in request, behaviour responds with svc0001 exception
 - optional
 
 By type:
@@ -105,11 +103,11 @@ By type:
 - uuid
 - string (list)
 - integer
-- {custom, Fun/1} %% for custom validation
+- {custom, fun(B::binary()) -> T::term()} %% for custom validation
 
 By repeated:
 - non repeated
-- repeated (values delimited with <;>)
+- repeated (values delimited with semicolons <;>)
 
 Supported http codes
 --------------------
