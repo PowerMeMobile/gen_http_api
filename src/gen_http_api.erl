@@ -103,9 +103,7 @@ get_method_spec(Method, _, State = #state{req = Req}) ->
 
 process_path(State = #state{req = Req0}) ->
 	{AtomBindings, Req1} = cowboy_req:bindings(Req0),
-	Bindings = lists:map(fun({AtomName, Value}) ->
-			{atom_to_binary(AtomName, utf8), Value}
-		end, AtomBindings),
+	Bindings = [{atom_to_binary(AtomName, utf8), Value} || {AtomName, Value} <- AtomBindings],
 	#state{req_params = Params} = State,
 	NewReqParams = lists:flatten([Bindings, Params]),
 	?log_debug("Params with bindings: ~p", [NewReqParams]),
