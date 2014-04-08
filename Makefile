@@ -9,3 +9,6 @@ compile: get-deps
 
 get-deps:
 	@./rebar get-deps
+
+test: xref
+	@./rebar eunit skip_deps=true
