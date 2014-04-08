@@ -8,6 +8,11 @@
 -include("logging.hrl").
 -include("crud.hrl").
 
+%-define(TEST, 1).
+-ifdef(TEST).
+    -include_lib("eunit/include/eunit.hrl").
+-endif.
+
 %% deprecated, do not use.
 -record(addr, {
 	addr :: string(),
@@ -222,7 +227,9 @@ convert(Value, binary) ->
 convert(Value, string) ->
 	binary_to_list(Value);
 convert(Value, integer) ->
-	list_to_integer(binary_to_list(Value)).
+	list_to_integer(binary_to_list(Value));
+convert(Value, float) ->
+    convert_float(Value).
 
 convert_boolean(<<"true">>) ->
 	true;
@@ -230,6 +237,29 @@ convert_boolean(<<"false">>) ->
 	false;
 convert_boolean(Any) ->
 	erlang:error({not_boolean, Any}).
+
+convert_float(Bin) ->
+    List = binary_to_list(Bin),
+    try list_to_float(List)
+    catch
+        error:badarg ->
+            try convert(Bin, integer) of
+                Int -> Int * 1.0
+            catch
+                error:badarg ->
+                    case lists:suffix(".", List) of
+                        true ->
+                            convert_float(list_to_binary(List ++ "0"));
+                        false ->
+                            case lists:prefix(".", List) of
+                                true ->
+                                    convert_float(list_to_binary("0" ++ List));
+                                false ->
+                                    erlang:error({bad_float, Bin})
+                            end
+                    end
+            end
+    end.
 
 validate_uuid(UUID) ->
 	try uuid:parse(UUID) of
@@ -308,8 +338,9 @@ exception(Code, Variables, Req, State) ->
 	Headers = [{<<"Content-Type">>, ContentType}],
 	http_reply(HttpCode, Headers, Body, Req, State).
 
+%%
 %% Service exceptions
-
+%%
 exception_body_and_code('svc0001', Variables) ->
 	MessageID = <<"SVC0001">>,
 	Text = <<"Invalid input %1 parameter value.">>,
@@ -370,7 +401,6 @@ exception_body_and_code(Exception, _Variables) ->
 	?log_error("", []),
 	{error, {no_such_exception, Exception}}.
 
-
 exception_body(MessageID, Text, Variables) ->
 	Body = [
 		{<<"request_error">>, [
@@ -397,3 +427,24 @@ get_requests_parameters(Method, Req0) ->
 		_Any ->
 			cowboy_req:qs_vals(Req0)
 	end.
+
+%% ===================================================================
+%% Tests begin
+%% ===================================================================
+
+-ifdef(TEST).
+
+convert_float_test() ->
+    ?assertEqual(1.0, convert(<<"1.0">>, float)),
+    ?assertEqual(1.0, convert(<<"1.00">>, float)),
+    ?assertEqual(1.0, convert(<<"1.">>, float)),
+    ?assertEqual(0.1, convert(<<".1">>, float)),
+    ?assertEqual(0.1, convert(<<"00.1">>, float)),
+    ?assertEqual(1.0, convert(<<"1">>, float)),
+    ?assertException(error, {bad_float, <<"float">>}, convert(<<"float">>, float)).
+
+-endif.
+
+%% ===================================================================
+%% Tests end
+%% ===================================================================

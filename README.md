@@ -103,6 +103,7 @@ By type:
 - uuid
 - string (list)
 - integer
+- float
 - {custom, fun(B::binary()) -> T::term()} %% for custom validation
 
 By repeated:
