@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/PowerMeMobile/gen_http_api.svg?branch=master)](https://travis-ci.org/PowerMeMobile/gen_http_api)
+
 Gen HTTP API
 ===========
 
