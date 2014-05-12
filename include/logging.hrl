@@ -4,7 +4,7 @@
 -compile([{parse_transform, lager_transform}]).
 
 -define(log_common(Lvl, Fmt, Args),
-		lager:Lvl(Fmt ++  " [~s:~p]", Args ++ [?FILE, ?LINE])).
+    lager:Lvl(Fmt ++  " [~s:~p]", Args ++ [?FILE, ?LINE])).
 
 -define(log_debug(Fmt, Args), ?log_common(debug, Fmt, Args)).
 -define(log_info(Fmt, Args), ?log_common(info, Fmt, Args)).

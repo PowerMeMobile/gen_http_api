@@ -12,82 +12,82 @@
 
 -spec process(tuple() | [tuple()], binary()) -> {ok, binary()}.
 process(Response, _Suff) when is_binary(Response) ->
-	{ok, Response};
+    {ok, Response};
 process(Response, <<"xml">>) ->
-	convert_to_xml(Response);
+    convert_to_xml(Response);
 process(Response, <<"json">>) ->
-	convert_to_json(Response);
+    convert_to_json(Response);
 process(Response, _AnySuff) ->
-	process(Response, <<"json">>).
+    process(Response, <<"json">>).
 
 %% ===================================================================
 %% XML Constructor Functions
 %% ===================================================================
 
 convert_to_xml(Response) ->
-	Converted = xml_preprocess(Response),
-	WithRoot = add_xml_root(Converted),
-	Xml = xmerl:export_simple(WithRoot, xmerl_xml,[{prolog, ?xml_prolog}]),
-	BinXml = unicode:characters_to_binary(Xml),
-	{ok, BinXml}.
+    Converted = xml_preprocess(Response),
+    WithRoot = add_xml_root(Converted),
+    Xml = xmerl:export_simple(WithRoot, xmerl_xml,[{prolog, ?xml_prolog}]),
+    BinXml = unicode:characters_to_binary(Xml),
+    {ok, BinXml}.
 
 add_xml_root(Object = [{_,_} | _Tail]) ->
-	[{object, Object}];
+    [{object, Object}];
 add_xml_root(Object) ->
-	Object.
+    Object.
 
 xml_preprocess(Atom) when is_atom(Atom) ->
-	[atom_to_list(Atom)];
+    [atom_to_list(Atom)];
 xml_preprocess(Integer) when is_integer(Integer) ->
-	[integer_to_list(Integer)];
+    [integer_to_list(Integer)];
 xml_preprocess(Float) when is_float(Float) ->
-	[float_to_list(Float)];
+    [float_to_list(Float)];
 xml_preprocess(Binary) when is_binary(Binary) ->
-	[binary_to_list(Binary)];
+    [binary_to_list(Binary)];
 xml_preprocess(List = [{_Key, _Value} | _Rest]) ->
-	[{K, xml_preprocess(V)} || {K, V} <- List];
+    [{K, xml_preprocess(V)} || {K, V} <- List];
 xml_preprocess(ObjectList = [ [{_K,_V} | _RestObjectProps] | _RestObjectList]) ->
-	[{item, xml_preprocess(Object)} || Object <- ObjectList];
+    [{item, xml_preprocess(Object)} || Object <- ObjectList];
 xml_preprocess(List = [String | _Rest]) when is_list(String) ->
-	[{item, [Item]} || Item <- List];
+    [{item, [Item]} || Item <- List];
 xml_preprocess({K, V}) ->
-	[{K, xml_preprocess(V)}];
+    [{K, xml_preprocess(V)}];
 xml_preprocess(List = [Item | _Rest]) when is_atom(Item) ->
-	[{item, [atom_to_list(Atom)]} || Atom <- List];
+    [{item, [atom_to_list(Atom)]} || Atom <- List];
 xml_preprocess(List = [Item | _Rest]) when is_binary(Item) ->
-	[{item, [binary_to_list(Binary)]} || Binary <- List];
+    [{item, [binary_to_list(Binary)]} || Binary <- List];
 xml_preprocess(Value) ->
-	[Value].
+    [Value].
 
 %% ===================================================================
 %% JSON Constructor Functions
 %% ===================================================================
 
 convert_to_json(Object) ->
-	PreProcessedObject = json_preprocess(Object),
-	Json = jsx:term_to_json(PreProcessedObject),
-	{ok, Json}.
+    PreProcessedObject = json_preprocess(Object),
+    Json = jsx:term_to_json(PreProcessedObject),
+    {ok, Json}.
 
 json_preprocess({K, V}) ->
-	json_preprocess([{K,V}]);
+    json_preprocess([{K,V}]);
 json_preprocess(null) ->
-	null;
+    null;
 json_preprocess(undefined) ->
-	null;
+    null;
 json_preprocess(true) ->
-	true;
+    true;
 json_preprocess(false) ->
-	false;
+    false;
 json_preprocess(Binary) when is_binary(Binary) ->
-	Binary;
+    Binary;
 json_preprocess(Number) when is_integer(Number) orelse
-							  is_float(Number) ->
-	Number;
+                              is_float(Number) ->
+    Number;
 json_preprocess(Atom) when is_atom(Atom) ->
-	atom_to_binary(Atom, utf8);
+    atom_to_binary(Atom, utf8);
 json_preprocess(List = [{_K, _V} | _Rest]) ->
-	[{json_preprocess(Key), json_preprocess(Value)} || {Key, Value} <- List];
+    [{json_preprocess(Key), json_preprocess(Value)} || {Key, Value} <- List];
 json_preprocess(List) when is_list(List) ->
-	[json_preprocess(Element) || Element <- List];
+    [json_preprocess(Element) || Element <- List];
 json_preprocess(List = [E | _Rest]) when is_atom(E) ->
-	[json_preprocess(Element) || Element <- List].
+    [json_preprocess(Element) || Element <- List].

@@ -24,10 +24,10 @@ Write simple handler:
 
 -export([
     init/0,
-	create/1,
-	read/1,
-	update/1,
-	delete/1
+    create/1,
+    read/1,
+    update/1,
+    delete/1
 ]).
 
 -include_lib("gen_http_api/include/crud_specs.hrl").
@@ -65,10 +65,10 @@ Also your response can be (see crud.hrl):
 -type response() ::
     {ok, body()} |
     {http_code, http_code()} |
-	{http_code, http_code(), body()} |
-	{exception, exception_id()} |
-	{exception, exception_id(), [term()]} |
-	{error, term()}.
+    {http_code, http_code(), body()} |
+    {exception, exception_id()} |
+    {exception, exception_id(), [term()]} |
+    {error, term()}.
 
 %% {ok, body()} is equvalent to {http_code, 200, body()}
 
