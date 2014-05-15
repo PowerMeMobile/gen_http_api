@@ -146,6 +146,8 @@ get_parameter(Spec = #param{name = Name, repeated = false}, ReqParamsPL) ->
 validate_repeated(undefined, Spec = #param{mandatory = true}) ->
     ?log_error("Bad request. Missing mandatory parameter [~p].", [Spec#param.name]),
     {error, missing, atom_to_binary(Spec#param.name, utf8)};
+validate_repeated(undefined, Spec) ->
+    {ok, {Spec#param.name, undefined}};
 validate_repeated(ValuesDelimited, Spec) ->
     Values = binary:split(ValuesDelimited, [<<";">>], [global, trim]),
     validate_repeated(Values, [], Spec).
@@ -160,7 +162,7 @@ validate_repeated([RawValue | Tail], Acc, Spec) ->
             Any
     end.
 
-validate(Value, Spec = #param{mandatory = true}) when Value == [] orelse Value == undefined ->
+validate(undefined, Spec = #param{mandatory = true}) ->
     ?log_error("Bad request. Missing mandatory parameter [~p].", [Spec#param.name]),
     {error, missing, Spec#param.name};
 validate(Value, Spec) ->
