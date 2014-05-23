@@ -237,6 +237,10 @@ convert_boolean(<<"true">>) ->
     true;
 convert_boolean(<<"false">>) ->
     false;
+convert_boolean(<<"True">>) ->
+    true;
+convert_boolean(<<"False">>) ->
+    false;
 convert_boolean(Any) ->
     erlang:error({not_boolean, Any}).
 
