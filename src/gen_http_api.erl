@@ -424,7 +424,7 @@ exception_body(MessageID, Text, Variables) ->
 get_requests_parameters(Method, Req0) ->
     case Method of
         Method when Method =:= <<"POST">> orelse Method =:= <<"PUT">> ->
-            {ok, Body, Req1} = cowboy_req:body(800000, Req0),
+            {ok, Body, Req1} = cowboy_req:body(Req0, [{length, 800000}]),
             BodyQs = cow_qs:parse_qs(Body),
             {QsVals, _} = cowboy_req:qs_vals(Req1),
             {BodyQs ++ QsVals, Req1};
