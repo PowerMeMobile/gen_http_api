@@ -310,6 +310,9 @@ http_code(401, ExtBody, Req, State) ->
     Body = resolve_body(ExtBody, <<"Authentication failure, check your authentication details">>),
     Headers = [{<<"Www-Authenticate">>, <<"Basic">>}],
     http_reply(401, Headers, Body, Req, State);
+http_code(403, ExtBody, Req, State) ->
+    Body = resolve_body(ExtBody, <<"Forbidden">>),
+    http_reply(403, [], Body, Req, State);
 http_code(404, ExtBody, Req, State) ->
     Body = resolve_body(ExtBody, <<"Not found: mistake in the host or path of the service URI">>),
     http_reply(404, [], Body, Req, State);

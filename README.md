@@ -12,7 +12,7 @@ Add dependency into your rebar.config:
 
 ``` erlang
 {deps, [
-    {gen_http_api, ".*", {git, "https://github.com/PowerMeMobile/gen_http_api.git", {branch, "develop"}}}
+    {gen_http_api, ".*", {git, "https://github.com/PowerMeMobile/gen_http_api.git", {branch, "master"}}}
 ]}.
 ```
 
@@ -132,6 +132,7 @@ Supported http codes and default response body:
 - 400 "Bad request"
 - 401 "Authentication failure, check your authentication details" (also
 response headers are presented: "Www-Authenticate: Basic")
+- 403 "Forbidden"
 - 404 "Not found: mistake in the host or path of the service URI"
 - 204 "" (hardcoded to support [rfc2616])
 - 201 "Created"
