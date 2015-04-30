@@ -376,7 +376,7 @@ exception_body_and_code('svc0003', Variables) ->
 
 exception_body_and_code('svc0004', Variables) ->
     MessageID = <<"SVC0004">>,
-    Text = <<"Resource already exist.">>,
+    Text = <<"Resource already exists.">>,
     0 = length(Variables),
     {ok, Body} = exception_body(MessageID, Text, Variables),
     {ok, Body, 400};
