@@ -316,6 +316,9 @@ http_code(403, ExtBody, Req, State) ->
 http_code(404, ExtBody, Req, State) ->
     Body = resolve_body(ExtBody, <<"Not found: mistake in the host or path of the service URI">>),
     http_reply(404, [], Body, Req, State);
+http_code(409, ExtBody, Req, State) ->
+    Body = resolve_body(ExtBody, <<"Conflict">>),
+    http_reply(409, [], Body, Req, State);
 http_code(204, _ExtBody, Req, State) ->
     http_reply(204, [], <<>>, Req, State);
 http_code(201, ExtBody, Req, State) ->
