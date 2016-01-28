@@ -1,0 +1,13 @@
+{"2.3.0",
+    %% upgrade
+    [{"2.2.0", [
+        {restart_application, jsx},
+        {load_module, gen_http_api_converter}
+    ]}],
+
+    %% downgrade
+    [{"2.2.0", [
+        {restart_application, jsx},
+        {load_module, gen_http_api_converter}
+    ]}]
+}.

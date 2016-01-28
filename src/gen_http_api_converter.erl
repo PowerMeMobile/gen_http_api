@@ -65,7 +65,7 @@ xml_preprocess(Value) ->
 
 convert_to_json(Object) ->
     PreProcessedObject = json_preprocess(Object),
-    Json = jsx:term_to_json(PreProcessedObject),
+    Json = jsx:encode(PreProcessedObject, [uescape]),
     {ok, Json}.
 
 json_preprocess({K, V}) ->
